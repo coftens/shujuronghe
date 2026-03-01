@@ -7,10 +7,10 @@
 # ============================================
 
 # ====== 配置 ======
-# 平台API地址（修改为你的实际地址）
-API_URL="http://121.196.229.4/api/collect.php"
-# Agent密钥（添加服务器后获取）
-AGENT_KEY="YOUR_AGENT_KEY_HERE"
+# 平台API地址（install_agent.sh会自动填充）
+API_URL="${API_URL:-YOUR_API_URL}"
+# Agent密钥（install_agent.sh会自动填充）
+AGENT_KEY="${AGENT_KEY:-YOUR_AGENT_KEY}"
 # ==================
 
 # 获取当前时间
@@ -18,30 +18,56 @@ TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 # ====== CPU 指标 ======
 collect_cpu() {
-    # CPU使用率（取1秒采样）
-    CPU_STATS=$(top -bn1 | grep "Cpu(s)" | head -1)
-    CPU_USER=$(echo "$CPU_STATS" | awk '{print $2}' | sed 's/%//;s/us,//')
-    CPU_SYSTEM=$(echo "$CPU_STATS" | awk '{print $4}' | sed 's/%//;s/sy,//')
-    CPU_IDLE=$(echo "$CPU_STATS" | awk '{print $8}' | sed 's/%//;s/id,//')
-    CPU_IOWAIT=$(echo "$CPU_STATS" | awk '{print $10}' | sed 's/%//;s/wa,//')
-    CPU_STEAL=$(echo "$CPU_STATS" | awk '{print $16}' | sed 's/%//;s/st//' 2>/dev/null || echo "0")
+    # 通过 /proc/stat 两次采样差值计算 CPU 使用率（最准确）
+    read_cpu_stat() {
+        awk '/^cpu /{print $2,$3,$4,$5,$6,$7,$8,$9}' /proc/stat
+    }
     
-    # 如果top格式不同,用mpstat
-    if [ -z "$CPU_USER" ] || [ "$CPU_USER" = "" ]; then
-        if command -v mpstat &> /dev/null; then
-            MPSTAT=$(mpstat 1 1 | tail -1)
-            CPU_USER=$(echo "$MPSTAT" | awk '{print $3}')
-            CPU_SYSTEM=$(echo "$MPSTAT" | awk '{print $5}')
-            CPU_IDLE=$(echo "$MPSTAT" | awk '{print $NF}')
-            CPU_IOWAIT=$(echo "$MPSTAT" | awk '{print $6}')
-            CPU_STEAL=$(echo "$MPSTAT" | awk '{print $(NF-1)}')
-        fi
-    fi
+    STAT1=$(read_cpu_stat)
+    sleep 1
+    STAT2=$(read_cpu_stat)
+    
+    CPU_USER=$(awk -v s1="$STAT1" -v s2="$STAT2" 'BEGIN{
+        split(s1,a," "); split(s2,b," ");
+        user=b[1]-a[1]; nice=b[2]-a[2]; sys=b[3]-a[3]; idle=b[4]-a[4];
+        iowait=b[5]-a[5]; irq=b[6]-a[6]; softirq=b[7]-a[7]; steal=b[8]-a[8];
+        total=user+nice+sys+idle+iowait+irq+softirq+steal;
+        if(total==0) total=1;
+        printf "%.2f", (user+nice)/total*100
+    }')
+    CPU_SYSTEM=$(awk -v s1="$STAT1" -v s2="$STAT2" 'BEGIN{
+        split(s1,a," "); split(s2,b," ");
+        sys=b[3]-a[3];
+        total=(b[1]-a[1])+(b[2]-a[2])+(b[3]-a[3])+(b[4]-a[4])+(b[5]-a[5])+(b[6]-a[6])+(b[7]-a[7])+(b[8]-a[8]);
+        if(total==0) total=1;
+        printf "%.2f", sys/total*100
+    }')
+    CPU_IDLE=$(awk -v s1="$STAT1" -v s2="$STAT2" 'BEGIN{
+        split(s1,a," "); split(s2,b," ");
+        idle=b[4]-a[4];
+        total=(b[1]-a[1])+(b[2]-a[2])+(b[3]-a[3])+(b[4]-a[4])+(b[5]-a[5])+(b[6]-a[6])+(b[7]-a[7])+(b[8]-a[8]);
+        if(total==0) total=1;
+        printf "%.2f", idle/total*100
+    }')
+    CPU_IOWAIT=$(awk -v s1="$STAT1" -v s2="$STAT2" 'BEGIN{
+        split(s1,a," "); split(s2,b," ");
+        iowait=b[5]-a[5];
+        total=(b[1]-a[1])+(b[2]-a[2])+(b[3]-a[3])+(b[4]-a[4])+(b[5]-a[5])+(b[6]-a[6])+(b[7]-a[7])+(b[8]-a[8]);
+        if(total==0) total=1;
+        printf "%.2f", iowait/total*100
+    }')
+    CPU_STEAL=$(awk -v s1="$STAT1" -v s2="$STAT2" 'BEGIN{
+        split(s1,a," "); split(s2,b," ");
+        steal=b[8]-a[8];
+        total=(b[1]-a[1])+(b[2]-a[2])+(b[3]-a[3])+(b[4]-a[4])+(b[5]-a[5])+(b[6]-a[6])+(b[7]-a[7])+(b[8]-a[8]);
+        if(total==0) total=1;
+        printf "%.2f", steal/total*100
+    }')
     
     # 负载
-    LOAD_1=$(cat /proc/loadavg | awk '{print $1}')
-    LOAD_5=$(cat /proc/loadavg | awk '{print $2}')
-    LOAD_15=$(cat /proc/loadavg | awk '{print $3}')
+    LOAD_1=$(awk '{print $1}' /proc/loadavg)
+    LOAD_5=$(awk '{print $2}' /proc/loadavg)
+    LOAD_15=$(awk '{print $3}' /proc/loadavg)
     
     # CPU核数
     CPU_CORES=$(nproc 2>/dev/null || grep -c processor /proc/cpuinfo)
@@ -74,33 +100,10 @@ collect_memory() {
 
 # ====== 磁盘指标 ======
 collect_disk() {
-    DISK_JSON="["
-    FIRST=1
-    
-    df -Pk | grep -vE "^Filesystem|tmpfs|devtmpfs|overlay" | while read line; do
-        FS=$(echo "$line" | awk '{print $1}')
-        TOTAL=$(echo "$line" | awk '{print $2}')
-        USED=$(echo "$line" | awk '{print $3}')
-        FREE=$(echo "$line" | awk '{print $4}')
-        PCT=$(echo "$line" | awk '{print $5}' | sed 's/%//')
-        MOUNT=$(echo "$line" | awk '{print $6}')
-        
-        # inode使用率
-        INODE_PCT=$(df -i "$MOUNT" 2>/dev/null | tail -1 | awk '{print $5}' | sed 's/%//' 2>/dev/null || echo "0")
-        
-        if [ $FIRST -eq 1 ]; then
-            FIRST=0
-        else
-            echo ","
-        fi
-        echo "{\"mount_point\":\"${MOUNT}\",\"filesystem\":\"${FS}\",\"disk_total\":${TOTAL},\"disk_used\":${USED},\"disk_free\":${FREE},\"disk_usage_pct\":${PCT:-0},\"inode_usage_pct\":${INODE_PCT:-0}}"
-    done
-    
-    # 用子shell方式正确生成JSON数组
-    DISK_DATA=$(df -Pk | grep -vE "^Filesystem|tmpfs|devtmpfs|overlay" | awk '{
-        printf "{\"mount_point\":\"%s\",\"filesystem\":\"%s\",\"disk_total\":%s,\"disk_used\":%s,\"disk_free\":%s,\"disk_usage_pct\":%s},", $6, $1, $2, $3, $4, int($5)
+    DISK_DATA=$(df -Pk | grep -vE "^Filesystem|tmpfs|devtmpfs|overlay|udev" | awk '{
+        pct = int($5);
+        printf "{\"mount_point\":\"%s\",\"filesystem\":\"%s\",\"disk_total\":%s,\"disk_used\":%s,\"disk_free\":%s,\"disk_usage_pct\":%s,\"inode_usage_pct\":0},", $6, $1, $2, $3, $4, pct
     }' | sed 's/,$//')
-    
     echo "[${DISK_DATA}]"
 }
 
@@ -188,10 +191,6 @@ collect_ports() {
 
 # ====== 系统日志（最近的错误和警告） ======
 collect_logs() {
-    LOG_DATA="["
-    FIRST=1
-    
-    # 从 /var/log/messages 或 journalctl 获取最近的错误
     if command -v journalctl &> /dev/null; then
         LOGS=$(journalctl --since "1 minutes ago" -p err --no-pager -o short 2>/dev/null | tail -20)
     elif [ -f /var/log/messages ]; then
@@ -199,15 +198,17 @@ collect_logs() {
     else
         LOGS=""
     fi
-    
-    if [ -n "$LOGS" ]; then
-        LOG_DATA=$(echo "$LOGS" | head -20 | while IFS= read -r line; do
-            # 转义JSON特殊字符
-            ESCAPED=$(echo "$line" | sed 's/\\/\\\\/g;s/"/\\"/g;s/\t/\\t/g' | head -c 500)
-            echo "{\"level\":\"error\",\"source\":\"syslog\",\"message\":\"${ESCAPED}\"},"
-        done | sed '$ s/,$//')
+
+    if [ -z "$LOGS" ]; then
+        echo "[]"
+        return
     fi
-    
+
+    LOG_DATA=$(echo "$LOGS" | head -20 | while IFS= read -r line; do
+        ESCAPED=$(echo "$line" | sed 's/\\/\\\\/g;s/"/\\"/g;s/\t/\\t/g' | head -c 500)
+        printf '{"level":"error","source":"syslog","message":"%s"},\n' "$ESCAPED"
+    done | sed '$ s/,$//')
+
     echo "[${LOG_DATA}]"
 }
 
@@ -232,35 +233,43 @@ PORT_DATA=$(collect_ports)
 LOG_DATA=$(collect_logs)
 SYS_DATA=$(collect_sysinfo)
 
-# 构建完整JSON
-PAYLOAD=$(cat <<EOF
-{
-    "agent_key": "${AGENT_KEY}",
-    "timestamp": "${TIMESTAMP}",
-    "sysinfo": ${SYS_DATA},
-    "cpu": ${CPU_DATA},
-    "memory": ${MEM_DATA},
-    "disk": ${DISK_DATA},
-    "network": ${NET_DATA},
-    "processes": ${PROC_DATA},
-    "tcp": ${TCP_DATA},
-    "ports": ${PORT_DATA},
-    "logs": ${LOG_DATA}
-}
-EOF
-)
+# 构建完整JSON，写入临时文件避免heredoc换行问题
+PAYLOAD_FILE=$(mktemp /tmp/host-monitor-payload.XXXXXX)
+
+# 各字段压缩为单行
+CPU_LINE=$(echo "$CPU_DATA" | tr -d '\n\r')
+MEM_LINE=$(echo "$MEM_DATA" | tr -d '\n\r')
+DISK_LINE=$(echo "$DISK_DATA" | tr -d '\n\r')
+NET_LINE=$(echo "$NET_DATA" | tr -d '\n\r')
+PROC_LINE=$(echo "$PROC_DATA" | tr -d '\n\r')
+TCP_LINE=$(echo "$TCP_DATA" | tr -d '\n\r')
+PORT_LINE=$(echo "$PORT_DATA" | tr -d '\n\r')
+LOG_LINE=$(echo "$LOG_DATA" | tr -d '\n\r')
+SYS_LINE=$(echo "$SYS_DATA" | tr -d '\n\r')
+TS_LINE=$(echo "$TIMESTAMP" | tr -d '\n\r')
+
+printf '{"agent_key":"%s","timestamp":"%s","sysinfo":%s,"cpu":%s,"memory":%s,"disk":%s,"network":%s,"processes":%s,"tcp":%s,"ports":%s,"logs":%s}' \
+    "$AGENT_KEY" "$TS_LINE" "$SYS_LINE" "$CPU_LINE" "$MEM_LINE" "$DISK_LINE" "$NET_LINE" "$PROC_LINE" "$TCP_LINE" "$PORT_LINE" "$LOG_LINE" \
+    > "$PAYLOAD_FILE"
 
 # 发送到平台
 RESPONSE=$(curl -s -X POST \
     -H "Content-Type: application/json" \
-    -d "${PAYLOAD}" \
+    --data-binary "@${PAYLOAD_FILE}" \
     --connect-timeout 10 \
     --max-time 30 \
     "${API_URL}" 2>/dev/null)
 
-# 记录结果（可选调试）
-if [ "${DEBUG:-0}" = "1" ]; then
-    echo "[$(date)] Response: ${RESPONSE}" >> /tmp/host-monitor-agent.log
+# 记录结果（调试时可查看payload）
+LOG_FILE="/tmp/host-monitor-agent.log"
+echo "[$(date)] Response: ${RESPONSE}" >> "$LOG_FILE"
+if echo "$RESPONSE" | grep -q '"code":400'; then
+    echo "[$(date)] Payload dump:" >> "$LOG_FILE"
+    cat "$PAYLOAD_FILE" >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
 fi
+
+# 清理临时文件
+rm -f "$PAYLOAD_FILE"
 
 exit 0
