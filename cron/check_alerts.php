@@ -71,18 +71,10 @@ function checkRule($db, $server, $rule) {
         $server['name'], $metricType, $metricField, $value, $symbol, $threshold
     );
     
-    $db->insert('alert_history', [
-        'server_id'    => $serverId,
-        'rule_id'      => $rule['id'],
-        'rule_name'    => $rule['name'],
-        'severity'     => $severity,
-        'metric_type'  => $metricType,
-        'metric_value' => $value,
-        'threshold'    => $threshold,
-        'message'      => $message,
-        'status'       => 'active',
-        'created_at'   => date('Y-m-d H:i:s'),
-    ]);
+    $db->insert(
+        "INSERT INTO alert_history (server_id, rule_id, rule_name, severity, metric_type, metric_value, threshold, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())",
+        [$serverId, $rule['id'], $rule['name'], $severity, $metricType, $value, $threshold, $message]
+    );
     
     // 站内通知
     notifyAllAdmins("⚠ {$message}", $severity === 'critical' ? 'alert' : 'warning');
