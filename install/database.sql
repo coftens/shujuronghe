@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 默认管理员 admin/admin123
-INSERT INTO `users` (`username`, `password`, `email`, `role`) VALUES
+INSERT IGNORE INTO `users` (`username`, `password`, `email`, `role`) VALUES
 ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@example.com', 'admin');
 
 -- ----------------------------
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS `alert_rules` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告警规则表';
 
 -- 默认告警规则
-INSERT INTO `alert_rules` (`name`, `metric_type`, `metric_field`, `condition`, `threshold`, `duration`, `severity`) VALUES
+INSERT IGNORE INTO `alert_rules` (`name`, `metric_type`, `metric_field`, `condition`, `threshold`, `duration`, `severity`) VALUES
 ('CPU使用率过高', 'cpu', 'cpu_usage', 'gt', 90, 3, 'danger'),
 ('CPU负载过高', 'cpu', 'load_1', 'gt', 10, 3, 'warning'),
 ('内存使用率过高', 'memory', 'mem_usage_pct', 'gt', 90, 3, 'danger'),
@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS `settings` (
     UNIQUE KEY `uk_key` (`key_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
-INSERT INTO `settings` (`key_name`, `value`, `description`) VALUES
+INSERT IGNORE INTO `settings` (`key_name`, `value`, `description`) VALUES
 ('site_name', '多源数据融合主机性能分析与故障预警平台', '站点名称'),
 ('data_retention_days', '90', '数据保留天数'),
 ('collect_interval', '60', '数据采集间隔(秒)'),
