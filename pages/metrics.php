@@ -47,7 +47,8 @@ $serverId = intval(input('server_id', 0));
         <div class="stat-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div class="stat-info">
             <h3 id="liveLoad">-</h3>
-            <p>系统负载</p>
+            <p>系统负载（1分钟）</p>
+            <p id="liveLoadSub" style="font-size:11px;color:#aaa;margin-top:2px;"></p>
         </div>
     </div>
     <div class="stat-card">
@@ -252,7 +253,10 @@ async function loadLatest() {
     const d = resp.data;
     const cpuUsage = d.cpu ? (100 - d.cpu.cpu_idle).toFixed(1) : '-';
     document.getElementById('liveCpu').textContent = cpuUsage + '%';
-    document.getElementById('liveLoad').textContent = d.cpu ? `${d.cpu.load_1} / ${d.cpu.load_5} / ${d.cpu.load_15}` : '-';
+    document.getElementById('liveLoad').textContent = d.cpu ? d.cpu.load_1 : '-';
+    if (d.cpu) {
+        document.getElementById('liveLoadSub').textContent = `5分: ${d.cpu.load_5}  15分: ${d.cpu.load_15}`;
+    }
     document.getElementById('liveMem').textContent = d.memory ? d.memory.mem_usage_pct + '%' : '-';
     document.getElementById('liveTcp').textContent = d.tcp ? d.tcp.total_connections : '-';
     
