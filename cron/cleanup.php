@@ -60,7 +60,7 @@ foreach ($tables as $table => $timeField) {
 $offlineThreshold = 5 * 60; // 5分钟无数据视为离线
 $db->execute(
     "UPDATE servers SET status = 'offline' 
-     WHERE status = 'online' AND last_seen < DATE_SUB(NOW(), INTERVAL ? SECOND)",
+     WHERE status = 'online' AND last_heartbeat < DATE_SUB(NOW(), INTERVAL ? SECOND)",
     [$offlineThreshold]
 );
 

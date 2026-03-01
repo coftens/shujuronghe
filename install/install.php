@@ -36,11 +36,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             $sql = file_get_contents($sqlFile);
-            // 分割SQL语句
-            $statements = array_filter(array_map('trim', explode(';', $sql)));
+            // 去除SQL注释并分割语句
+            $lines = explode("\n", $sql);
+            $cleanSql = '';
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                // 跳过纯注释行
+                if (strpos($trimmed, '--') === 0 || $trimmed === '') continue;
+                $cleanSql .= $line . "\n";
+            }
+            $statements = array_filter(array_map('trim', explode(';', $cleanSql)));
             foreach ($statements as $stmt) {
-                if (!empty($stmt) && stripos($stmt, '--') !== 0) {
-                    $pdo->exec($stmt);
+                if (!empty($stmt)) {
+                    $pdo->exec($stmt . ';');
                 }
             }
             

@@ -43,6 +43,9 @@ function checkRule($db, $server, $rule) {
         if ($lastAlert) return;
     }
     
+    // 跳过 server 类型的规则（如掉线检测，由其他机制处理）
+    if ($metricType === 'server') return;
+    
     // 获取最新指标值
     $value = getLatestMetricValue($db, $serverId, $metricType, $metricField);
     if ($value === null) return;
@@ -50,31 +53,35 @@ function checkRule($db, $server, $rule) {
     // 条件判断
     $triggered = false;
     switch ($condition) {
-        case '>':  $triggered = $value > $threshold; break;
-        case '>=': $triggered = $value >= $threshold; break;
-        case '<':  $triggered = $value < $threshold; break;
-        case '<=': $triggered = $value <= $threshold; break;
-        case '=':  $triggered = $value == $threshold; break;
-        case '!=': $triggered = $value != $threshold; break;
+        case 'gt':  $triggered = $value > $threshold; break;
+        case 'gte': $triggered = $value >= $threshold; break;
+        case 'lt':  $triggered = $value < $threshold; break;
+        case 'lte': $triggered = $value <= $threshold; break;
+        case 'eq':  $triggered = $value == $threshold; break;
+        case 'neq': $triggered = $value != $threshold; break;
     }
     
     if (!$triggered) return;
     
     // 生成告警
+    $condSymbols = ['gt'=>'>','gte'=>'>=','lt'=>'<','lte'=>'<=','eq'=>'=','neq'=>'!='];
+    $symbol = $condSymbols[$condition] ?? $condition;
     $message = sprintf(
         '服务器 [%s] %s.%s = %.2f %s %.2f',
-        $server['name'], $metricType, $metricField, $value, $condition, $threshold
+        $server['name'], $metricType, $metricField, $value, $symbol, $threshold
     );
     
     $db->insert('alert_history', [
-        'server_id'  => $serverId,
-        'rule_id'    => $rule['id'],
-        'severity'   => $severity,
-        'message'    => $message,
-        'value'      => $value,
-        'threshold'  => $threshold,
-        'status'     => 'active',
-        'created_at' => date('Y-m-d H:i:s'),
+        'server_id'    => $serverId,
+        'rule_id'      => $rule['id'],
+        'rule_name'    => $rule['name'],
+        'severity'     => $severity,
+        'metric_type'  => $metricType,
+        'metric_value' => $value,
+        'threshold'    => $threshold,
+        'message'      => $message,
+        'status'       => 'active',
+        'created_at'   => date('Y-m-d H:i:s'),
     ]);
     
     // 站内通知
@@ -103,15 +110,32 @@ function getLatestMetricValue($db, $serverId, $metricType, $field) {
     
     // 检查字段是否存在于该表
     $allowedFields = [
-        'metrics_cpu'     => ['usage_percent', 'load_1', 'load_5', 'load_15', 'io_wait'],
-        'metrics_memory'  => ['used_percent', 'swap_used_percent', 'available_kb'],
-        'metrics_disk'    => ['used_percent', 'used_gb', 'available_gb'],
-        'metrics_disk_io' => ['read_speed', 'write_speed', 'io_util'],
-        'metrics_network' => ['rx_bytes', 'tx_bytes', 'rx_packets', 'tx_packets'],
-        'metrics_tcp'     => ['established', 'time_wait', 'close_wait'],
+        'metrics_cpu'     => ['cpu_user', 'cpu_system', 'cpu_idle', 'cpu_iowait', 'cpu_steal', 'cpu_usage', 'load_1', 'load_5', 'load_15'],
+        'metrics_memory'  => ['mem_usage_pct', 'mem_total', 'mem_used', 'mem_free', 'mem_available', 'swap_total', 'swap_used', 'swap_used_pct'],
+        'metrics_disk'    => ['disk_usage_pct', 'disk_total', 'disk_used', 'disk_free', 'inode_usage_pct'],
+        'metrics_disk_io' => ['read_bytes', 'write_bytes', 'read_iops', 'write_iops', 'io_util_pct'],
+        'metrics_network' => ['bytes_in', 'bytes_out', 'packets_in', 'packets_out', 'bandwidth_in', 'bandwidth_out'],
+        'metrics_tcp'     => ['established', 'time_wait', 'close_wait', 'listen', 'total_connections'],
     ];
     
     if (!in_array($field, $allowedFields[$table] ?? [])) return null;
+    
+    // 处理计算字段
+    if ($table === 'metrics_cpu' && $field === 'cpu_usage') {
+        $row = $db->fetch(
+            "SELECT (100 - cpu_idle) as val FROM `{$table}` WHERE server_id = ? ORDER BY recorded_at DESC LIMIT 1",
+            [$serverId]
+        );
+        return $row ? (float)$row['val'] : null;
+    }
+    
+    if ($table === 'metrics_memory' && $field === 'swap_used_pct') {
+        $row = $db->fetch(
+            "SELECT CASE WHEN swap_total > 0 THEN (swap_used / swap_total * 100) ELSE 0 END as val FROM `{$table}` WHERE server_id = ? ORDER BY recorded_at DESC LIMIT 1",
+            [$serverId]
+        );
+        return $row ? (float)$row['val'] : null;
+    }
     
     $row = $db->fetch(
         "SELECT `{$field}` as val FROM `{$table}` WHERE server_id = ? ORDER BY recorded_at DESC LIMIT 1",
@@ -140,7 +164,7 @@ function sendAlertEmail($db, $server, $rule, $message, $value) {
     $body = "<html><body>";
     $body .= "<h2 style='color:#ff4d4f;'>⚠ 服务器告警通知</h2>";
     $body .= "<table style='border-collapse:collapse;width:100%;max-width:600px;'>";
-    $body .= "<tr><td style='padding:8px;border:1px solid #ddd;background:#f5f5f5;'><strong>服务器</strong></td><td style='padding:8px;border:1px solid #ddd;'>{$server['name']} ({$server['ip_address']})</td></tr>";
+    $body .= "<tr><td style='padding:8px;border:1px solid #ddd;background:#f5f5f5;'><strong>服务器</strong></td><td style='padding:8px;border:1px solid #ddd;'>{$server['name']} ({$server['host']})</td></tr>";
     $body .= "<tr><td style='padding:8px;border:1px solid #ddd;background:#f5f5f5;'><strong>规则</strong></td><td style='padding:8px;border:1px solid #ddd;'>{$rule['name']}</td></tr>";
     $body .= "<tr><td style='padding:8px;border:1px solid #ddd;background:#f5f5f5;'><strong>当前值</strong></td><td style='padding:8px;border:1px solid #ddd;'>{$value}</td></tr>";
     $body .= "<tr><td style='padding:8px;border:1px solid #ddd;background:#f5f5f5;'><strong>阈值</strong></td><td style='padding:8px;border:1px solid #ddd;'>{$rule['condition']} {$rule['threshold']}</td></tr>";
