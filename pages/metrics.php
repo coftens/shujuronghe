@@ -44,28 +44,28 @@ $serverId = intval(input('server_id', 0));
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon cyan">📊</div>
+        <div class="stat-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div class="stat-info">
             <h3 id="liveLoad">-</h3>
             <p>系统负载</p>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon green">💾</div>
+        <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg></div>
         <div class="stat-info">
             <h3 id="liveMem">-</h3>
             <p>内存使用率</p>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon purple">💿</div>
+        <div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
         <div class="stat-info">
             <h3 id="liveDisk">-</h3>
             <p>磁盘最高使用率</p>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon orange">🔗</div>
+        <div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><line x1="12" y1="12" x2="12" y2="8"/></svg></div>
         <div class="stat-info">
             <h3 id="liveTcp">-</h3>
             <p>TCP连接数</p>

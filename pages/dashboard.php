@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- 统计卡片 -->
 <div class="stat-cards" id="statCards">
     <div class="stat-card">
-        <div class="stat-icon blue">🖥️</div>
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
         <div class="stat-info">
             <h3 id="totalServers">-</h3>
             <p>服务器总数</p>
@@ -32,7 +32,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon red">🔔</div>
+        <div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
         <div class="stat-info">
             <h3 id="activeAlerts">-</h3>
             <p>活跃告警</p>
@@ -121,7 +121,7 @@ async function loadDashboard() {
 function renderServerCards(servers) {
     const container = document.getElementById('serverCards');
     if (servers.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🖥️</div><p>暂无服务器，请先添加服务器</p><a href="/pages/servers.php" class="btn btn-primary">添加服务器</a></div>';
+        container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" style="color:#ccc"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><p>暂无服务器，请先添加服务器</p><a href="/pages/servers.php" class="btn btn-primary">添加服务器</a></div>';
         return;
     }
     
@@ -237,7 +237,7 @@ async function loadRecentAlerts() {
     const container = document.getElementById('recentAlerts');
     
     if (!resp || resp.code !== 200 || resp.data.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="padding:30px"><div class="empty-icon">✅</div><p>暂无活跃告警，一切正常！</p></div>';
+        container.innerHTML = '<div class="empty-state" style="padding:30px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" style="color:#52c41a"><polyline points="20 6 9 17 4 12"/></svg></div><p>暂无活跃告警，一切正常！</p></div>';
         return;
     }
     

@@ -13,8 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // 获取JSON数据
 $data = getJsonInput();
-if (empty($data)) {
-    jsonResponse(400, '无效的请求数据');
+if ($data === null) {
+    jsonResponse(400, '无效的请求数据: ' . json_last_error_msg());
 }
 
 // 验证Agent密钥

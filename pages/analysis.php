@@ -26,7 +26,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <option value="168">最近7天</option>
             </select>
         </div>
-        <button class="btn btn-primary" onclick="loadAnalysis()">🔍 分析</button>
+        <button class="btn btn-primary" onclick="loadAnalysis()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 分析</button>
     </div>
 </div>
 
@@ -49,7 +49,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- 瓶颈分析 -->
 <div class="card mb-2">
     <div class="card-header">
-        <span>🔍 瓶颈分析</span>
+        <span>瓶颈分析</span>
     </div>
     <div class="card-body" id="bottleneckSection">
         <div class="empty-state"><p>请选择服务器进行分析</p></div>
@@ -59,7 +59,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- 趋势预测 -->
 <div class="card mb-2">
     <div class="card-header">
-        <span>📈 趋势预测</span>
+        <span>趋势预测</span>
     </div>
     <div class="card-body" id="predictionSection">
         <div class="empty-state"><p>请选择服务器进行分析</p></div>
@@ -69,13 +69,13 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- 高峰时段 & TOP进程 -->
 <div class="grid grid-2">
     <div class="card">
-        <div class="card-header">📊 高峰时段分析（最近7天）</div>
+        <div class="card-header">高峰时段分析（最近7天）</div>
         <div class="card-body">
             <div id="peakChart" class="chart-container" style="height:280px;"></div>
         </div>
     </div>
     <div class="card">
-        <div class="card-header">🔥 资源消耗TOP进程</div>
+        <div class="card-header">资源消耗 TOP 进程</div>
         <div class="card-body" id="topProcessSection">
             <div class="empty-state"><p>请选择服务器</p></div>
         </div>
@@ -190,7 +190,7 @@ function renderBottlenecks(issues) {
     const section = document.getElementById('bottleneckSection');
     
     if (issues.length === 0) {
-        section.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">✅</div><p>未发现性能瓶颈，服务器运行良好！</p></div>';
+        section.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" style="color:#52c41a"><polyline points="20 6 9 17 4 12"/></svg></div><p>未发现性能瓶颈，服务器运行良好！</p></div>';
         return;
     }
     
@@ -212,7 +212,7 @@ function renderPredictions(predictions) {
         return;
     }
     
-    const trendIcons = { rising: '📈', falling: '📉', stable: '➡️' };
+    const trendIcons = { rising: '↑', falling: '↓', stable: '→' };
     const trendLabels = { rising: '上升', falling: '下降', stable: '稳定' };
     const typeLabels = { disk: '磁盘', memory: '内存', cpu: 'CPU' };
     
@@ -227,8 +227,8 @@ function renderPredictions(predictions) {
                     <div style="margin-top:8px;font-size:13px;">
                         <div>当前: <strong>${p.current}%</strong></div>
                         <div>日均变化: <strong>${p.daily_growth > 0 ? '+' : ''}${p.daily_growth}%</strong></div>
-                        ${p.days_to_full ? `<div class="text-danger" style="margin-top:4px;">⚠️ 预计 <strong>${p.days_to_full}</strong> 天后满</div>` : ''}
-                        ${p.warning ? `<div class="text-danger" style="margin-top:4px;">⚠️ ${p.warning}</div>` : ''}
+                        ${p.days_to_full ? `<div class="text-danger" style="margin-top:4px;"><strong>警告：</strong>预计 <strong>${p.days_to_full}</strong> 天后满</div>` : ''}
+                        ${p.warning ? `<div class="text-danger" style="margin-top:4px;"><strong>警告：</strong>${p.warning}</div>` : ''}
                     </div>
                 </div>
             `).join('')}

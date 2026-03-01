@@ -11,6 +11,20 @@ function db() {
 }
 
 /**
+ * 获取当前服务器的完整URL（动态识别）
+ */
+function getServerUrl() {
+    if (isset($_SERVER['HTTP_HOST'])) {
+        // Web请求环境，根据当前请求动态识别
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+        return $scheme . '://' . $_SERVER['HTTP_HOST'];
+    }
+    // CLI环境（定时任务），读取配置
+    global $GLOBALS;
+    return $GLOBALS['config']['server_url'] ?? 'http://localhost';
+}
+
+/**
  * JSON响应
  */
 function jsonResponse($code = 200, $msg = 'success', $data = null) {
@@ -35,7 +49,10 @@ function input($key, $default = null) {
  */
 function getJsonInput() {
     $input = file_get_contents('php://input');
-    return json_decode($input, true) ?: [];
+    if (empty($input)) return null;
+    $data = json_decode($input, true);
+    if (json_last_error() !== JSON_ERROR_NONE) return null;
+    return $data;
 }
 
 /**

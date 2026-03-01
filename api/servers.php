@@ -39,10 +39,11 @@ switch ($action) {
         
         logOperation('add_server', "server#{$id}", "添加服务器: {$name} ({$host})");
         
+        $baseUrl = getServerUrl();
         jsonResponse(200, '添加成功', [
             'id' => $id,
             'agent_key' => $agentKey,
-            'install_command' => "curl -sSL http://121.196.229.4/agent/install_agent.sh | bash -s http://121.196.229.4/api/collect.php {$agentKey}"
+            'install_command' => "curl -sSL {$baseUrl}/agent/install_agent.sh | bash -s -- {$baseUrl}/api/collect.php {$agentKey}"
         ]);
         break;
     
@@ -95,9 +96,10 @@ switch ($action) {
         $server = db()->fetch("SELECT id, name, host, agent_key FROM servers WHERE id = ?", [$id]);
         if (!$server) jsonResponse(404, '服务器不存在');
         
+        $baseUrl = getServerUrl();
         jsonResponse(200, 'success', [
             'agent_key' => $server['agent_key'],
-            'install_command' => "curl -sSL http://121.196.229.4/agent/install_agent.sh | bash -s http://121.196.229.4/api/collect.php {$server['agent_key']}"
+            'install_command' => "curl -sSL {$baseUrl}/agent/install_agent.sh | bash -s -- {$baseUrl}/api/collect.php {$server['agent_key']}"
         ]);
         break;
     

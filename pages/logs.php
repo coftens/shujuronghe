@@ -31,7 +31,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <input type="text" id="logKeyword" class="form-control" placeholder="搜索关键字..." style="width:200px;">
         </div>
-        <button class="btn btn-primary" onclick="loadLogs()">🔍 搜索</button>
+        <button class="btn btn-primary" onclick="loadLogs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 搜索</button>
     </div>
 </div>
 

@@ -32,5 +32,6 @@ return [
     'debug' => false,
     
     // 服务器地址
-    'server_url' => 'http://121.196.229.4',
+    // 默认服务器地址（如果无法自动识别会使用此值）
+    'server_url' => 'http://localhost',
 ];

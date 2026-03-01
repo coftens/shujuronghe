@@ -10,7 +10,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="flex-between mb-2">
     <div></div>
-    <button class="btn btn-primary" onclick="showModal('addServerModal')">➕ 添加服务器</button>
+    <button class="btn btn-primary" onclick="showModal('addServerModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加服务器</button>
 </div>
 
 <div class="card">
@@ -82,12 +82,12 @@ require_once __DIR__ . '/../includes/header.php';
                 <textarea id="installCmdDisplay" class="form-control" readonly rows="3" style="font-family:monospace;font-size:12px;"></textarea>
             </div>
             <p class="text-muted" style="font-size:12px;">
-                💡 在被监控的服务器上以root用户执行上述命令，即可自动安装Agent并开始采集数据。<br>
+                提示：在被监控的服务器上以root用户执行上述命令，即可自动安装Agent并开始采集数据。<br>
                 Agent每分钟自动采集一次数据并上报到平台。
             </p>
         </div>
         <div class="modal-footer">
-            <button class="btn" onclick="copyInstallCmd()">📋 复制安装命令</button>
+            <button class="btn" onclick="copyInstallCmd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 复制安装命令</button>
             <button class="btn" onclick="hideModal('agentInfoModal')">关闭</button>
         </div>
     </div>
@@ -101,7 +101,7 @@ async function loadServers() {
     const tbody = document.getElementById('serverTable');
     
     if (resp.data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🖥️</div><p>暂无服务器</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" style="color:#ccc"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div><p>暂无服务器</p></div></td></tr>';
         return;
     }
     
@@ -115,10 +115,10 @@ async function loadServers() {
             <td>${s.last_heartbeat ? timeAgo(s.last_heartbeat) : '未连接'}</td>
             <td>
                 <div class="btn-group">
-                    <a href="/pages/metrics.php?server_id=${s.id}" class="btn btn-sm">📊 监控</a>
-                    <button class="btn btn-sm" onclick="showAgentInfo(${s.id})">🔑 Agent</button>
-                    <button class="btn btn-sm" onclick="editServer(${JSON.stringify(s).replace(/"/g, '&quot;')})">✏️</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteServer(${s.id}, '${s.name}')">🗑️</button>
+                    <a href="/pages/metrics.php?server_id=${s.id}" class="btn btn-sm">监控</a>
+                    <button class="btn btn-sm" onclick="showAgentInfo(${s.id})">Agent</button>
+                    <button class="btn btn-sm" onclick="editServer(${JSON.stringify(s).replace(/"/g, '&quot;')})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteServer(${s.id}, '${s.name}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
                 </div>
             </td>
         </tr>
