@@ -170,7 +170,10 @@ function renderScore(score) {
     
     // 雷达图
     createChart('radarChart', {
+        legend: { show: false },
         radar: {
+            center: ['50%', '54%'],
+            radius: '68%',
             indicator: [
                 { name: 'CPU', max: 100 },
                 { name: '负载', max: 100 },
