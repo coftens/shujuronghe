@@ -172,8 +172,9 @@ function sendAlertEmail($db, $server, $rule, $message, $value) {
     
     foreach ($admins as $admin) {
         $to = $admin['email'];
-        // 使用 fsockopen 发送SMTP邮件
-        smtpSend($smtpHost, $smtpPort, $smtpEncryption, $smtpUser, $smtpPass, $smtpFrom, $to, $subject, $body);
+        echo date('[Y-m-d H:i:s]') . " 发送邮件至: {$to}\n";
+        $result = smtpSend($smtpHost, $smtpPort, $smtpEncryption, $smtpUser, $smtpPass, $smtpFrom, $to, $subject, $body);
+        echo date('[Y-m-d H:i:s]') . " 邮件结果: " . ($result ? '成功' : '失败') . "\n";
     }
 }
 
