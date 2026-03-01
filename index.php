@@ -1,7 +1,5 @@
-<?php
-/**
- * 入口文件 - 路由到登录或仪表盘
- */
+﻿<?php
+
 require_once __DIR__ . '/includes/init.php';
 
 if (isLoggedIn()) {

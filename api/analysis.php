@@ -1,8 +1,5 @@
-<?php
-/**
- * 性能分析API
- * 提供深度分析功能
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
@@ -16,8 +13,6 @@ if (!$serverId && $action !== 'global_summary') {
 }
 
 switch ($action) {
-
-    // ====== 全局摘要 ======
     case 'global_summary':
         $servers = db()->fetchAll("SELECT * FROM servers");
         $summary = [];
@@ -42,26 +37,18 @@ switch ($action) {
         
         jsonResponse(200, 'success', $summary);
         break;
-
-    // ====== 性能评分 ======
     case 'score':
         $score = calculatePerformanceScore($serverId, $hours);
         jsonResponse(200, 'success', $score);
         break;
-    
-    // ====== 瓶颈分析 ======
     case 'bottleneck':
         $bottlenecks = analyzeBottlenecks($serverId, $hours);
         jsonResponse(200, 'success', $bottlenecks);
         break;
-    
-    // ====== 趋势预测 ======
     case 'prediction':
         $predictions = predictTrends($serverId);
         jsonResponse(200, 'success', $predictions);
         break;
-    
-    // ====== 资源消耗TOP进程 ======
     case 'top_processes':
         $topCpu = db()->fetchAll(
             "SELECT process_name, AVG(cpu_pct) as avg_cpu, MAX(cpu_pct) as max_cpu, COUNT(*) as samples
@@ -82,8 +69,6 @@ switch ($action) {
             'top_mem' => $topMem,
         ]);
         break;
-    
-    // ====== 高峰时段分析 ======
     case 'peak_hours':
         $cpuByHour = db()->fetchAll(
             "SELECT HOUR(recorded_at) as hour, AVG(100-cpu_idle) as avg_cpu, MAX(100-cpu_idle) as max_cpu
@@ -104,8 +89,6 @@ switch ($action) {
             'mem_by_hour' => $memByHour,
         ]);
         break;
-    
-    // ====== 对比分析 ======
     case 'compare':
         $compareServerId = intval(input('compare_server_id', 0));
         if (!$compareServerId) jsonResponse(400, '缺少对比服务器ID');
@@ -123,11 +106,6 @@ switch ($action) {
         jsonResponse(400, '未知操作');
 }
 
-// ====== 辅助函数 ======
-
-/**
- * 计算性能评分（0-100）
- */
 function calculatePerformanceScore($serverId, $hours) {
     $cpu = db()->fetch(
         "SELECT AVG(100-cpu_idle) as avg_cpu, AVG(load_1) as avg_load, MAX(cpu_cores) as cores
@@ -146,8 +124,6 @@ function calculatePerformanceScore($serverId, $hours) {
          WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)",
         [$serverId, $hours]
     );
-    
-    // 评分规则
     $cpuScore = max(0, 100 - ($cpu['avg_cpu'] ?? 0));
     $loadScore = 100;
     if (($cpu['cores'] ?? 1) > 0) {
@@ -156,11 +132,7 @@ function calculatePerformanceScore($serverId, $hours) {
     }
     $memScore = max(0, 100 - ($mem['avg_mem'] ?? 0));
     $diskScore = max(0, 100 - ($disk['max_disk'] ?? 0));
-    
-    // 综合评分（加权）
     $overall = round($cpuScore * 0.3 + $loadScore * 0.2 + $memScore * 0.3 + $diskScore * 0.2);
-    
-    // 评级
     if ($overall >= 90) $grade = 'A';
     elseif ($overall >= 80) $grade = 'B';
     elseif ($overall >= 60) $grade = 'C';
@@ -183,13 +155,8 @@ function calculatePerformanceScore($serverId, $hours) {
     ];
 }
 
-/**
- * 瓶颈分析
- */
 function analyzeBottlenecks($serverId, $hours) {
     $issues = [];
-    
-    // CPU分析
     $cpu = db()->fetch(
         "SELECT AVG(100-cpu_idle) as avg_cpu, MAX(100-cpu_idle) as max_cpu, AVG(cpu_iowait) as avg_iowait, AVG(load_1) as avg_load, MAX(cpu_cores) as cores
          FROM metrics_cpu WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)",
@@ -214,8 +181,6 @@ function analyzeBottlenecks($serverId, $hours) {
         $issues[] = ['type' => 'cpu', 'severity' => 'danger', 'title' => '系统负载过高',
             'desc' => "平均负载 {$cpu['avg_load']}，超过核数({$cores})的2倍"];
     }
-    
-    // 内存分析
     $mem = db()->fetch(
         "SELECT AVG(mem_usage_pct) as avg_mem, MAX(mem_usage_pct) as max_mem, AVG(swap_used) as avg_swap, AVG(swap_total) as swap_total
          FROM metrics_memory WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)",
@@ -237,8 +202,6 @@ function analyzeBottlenecks($serverId, $hours) {
                 'desc' => "Swap使用率 " . round($swapPct) . "%，可能内存不足"];
         }
     }
-    
-    // 磁盘分析
     $disks = db()->fetchAll(
         "SELECT mount_point, MAX(disk_usage_pct) as max_usage, MAX(inode_usage_pct) as max_inode
          FROM metrics_disk WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)
@@ -259,8 +222,6 @@ function analyzeBottlenecks($serverId, $hours) {
                 'desc' => "inode使用率 {$d['max_inode']}%"];
         }
     }
-    
-    // TCP分析
     $tcp = db()->fetch(
         "SELECT AVG(total_connections) as avg_conn, MAX(total_connections) as max_conn, AVG(time_wait) as avg_tw, AVG(close_wait) as avg_cw
          FROM metrics_tcp WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)",
@@ -276,8 +237,6 @@ function analyzeBottlenecks($serverId, $hours) {
         $issues[] = ['type' => 'network', 'severity' => 'warning', 'title' => 'CLOSE_WAIT连接过多',
             'desc' => "平均 {$tcp['avg_cw']} 个CLOSE_WAIT连接，可能存在程序未正确关闭连接"];
     }
-    
-    // 排序：严重程度
     $severityOrder = ['critical' => 0, 'danger' => 1, 'warning' => 2, 'info' => 3];
     usort($issues, function($a, $b) use ($severityOrder) {
         return ($severityOrder[$a['severity']] ?? 9) - ($severityOrder[$b['severity']] ?? 9);
@@ -286,13 +245,8 @@ function analyzeBottlenecks($serverId, $hours) {
     return $issues;
 }
 
-/**
- * 趋势预测（简单线性回归）
- */
 function predictTrends($serverId) {
     $predictions = [];
-    
-    // 磁盘增长预测
     $diskData = db()->fetchAll(
         "SELECT mount_point, 
                 DATE(recorded_at) as date,
@@ -303,8 +257,6 @@ function predictTrends($serverId) {
          GROUP BY mount_point, DATE(recorded_at) ORDER BY mount_point, date",
         [$serverId]
     );
-    
-    // 按挂载点分组
     $byMount = [];
     foreach ($diskData as $d) {
         $byMount[$d['mount_point']][] = $d;
@@ -312,8 +264,6 @@ function predictTrends($serverId) {
     
     foreach ($byMount as $mount => $data) {
         if (count($data) < 2) continue;
-        
-        // 简单线性回归
         $n = count($data);
         $sumX = 0; $sumY = 0; $sumXY = 0; $sumX2 = 0;
         
@@ -333,7 +283,6 @@ function predictTrends($serverId) {
         $daysToFull = 0;
         
         if ($slope > 0) {
-            // 预测多少天后到100%
             $remaining = 100 - $currentUsage;
             $daysToFull = round($remaining / $slope);
         }
@@ -348,8 +297,6 @@ function predictTrends($serverId) {
             'warning' => $daysToFull > 0 && $daysToFull < 30 ? "预计 {$daysToFull} 天后磁盘满" : null,
         ];
     }
-    
-    // 内存增长预测
     $memData = db()->fetchAll(
         "SELECT DATE(recorded_at) as date, AVG(mem_usage_pct) as avg_usage
          FROM metrics_memory WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -376,8 +323,6 @@ function predictTrends($serverId) {
             'warning' => $slope > 2 ? "内存使用呈上升趋势，可能存在内存泄漏" : null,
         ];
     }
-    
-    // CPU趋势
     $cpuData = db()->fetchAll(
         "SELECT DATE(recorded_at) as date, AVG(100-cpu_idle) as avg_usage
          FROM metrics_cpu WHERE server_id = ? AND recorded_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -406,9 +351,6 @@ function predictTrends($serverId) {
     return $predictions;
 }
 
-/**
- * 获取服务器统计汇总
- */
 function getServerStats($serverId, $hours) {
     $server = db()->fetch("SELECT * FROM servers WHERE id = ?", [$serverId]);
     $cpu = db()->fetch(

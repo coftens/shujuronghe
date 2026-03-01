@@ -1,7 +1,5 @@
-<?php
-/**
- * 性能分析页面
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '性能分析');
@@ -30,7 +28,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 性能评分 -->
 <div class="grid grid-2 mb-2">
     <div class="card">
         <div class="card-header">综合性能评分</div>
@@ -46,7 +43,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 瓶颈分析 -->
 <div class="card mb-2">
     <div class="card-header">
         <span>瓶颈分析</span>
@@ -56,7 +52,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 趋势预测 -->
 <div class="card mb-2">
     <div class="card-header">
         <span>趋势预测</span>
@@ -66,7 +61,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 高峰时段 & TOP进程 -->
 <div class="grid grid-2">
     <div class="card">
         <div class="card-header">高峰时段分析（最近7天）</div>
@@ -83,7 +77,6 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
-// 初始化
 (async function init() {
     const resp = await api('/api/servers.php', { action: 'list' });
     if (resp && resp.code === 200) {
@@ -101,8 +94,6 @@ async function loadAnalysis() {
     const sid = document.getElementById('serverSelect').value;
     const hours = document.getElementById('analysisPeriod').value;
     if (!sid) return;
-    
-    // 并行加载所有分析数据
     const [scoreResp, bottleneckResp, predResp, peakResp, procResp] = await Promise.all([
         api('/api/analysis.php', { action: 'score', server_id: sid, hours: hours }),
         api('/api/analysis.php', { action: 'bottleneck', server_id: sid, hours: hours }),
@@ -110,28 +101,18 @@ async function loadAnalysis() {
         api('/api/analysis.php', { action: 'peak_hours', server_id: sid }),
         api('/api/analysis.php', { action: 'top_processes', server_id: sid, hours: hours }),
     ]);
-    
-    // 渲染评分
     if (scoreResp && scoreResp.code === 200) {
         renderScore(scoreResp.data);
     }
-    
-    // 渲染瓶颈
     if (bottleneckResp && bottleneckResp.code === 200) {
         renderBottlenecks(bottleneckResp.data);
     }
-    
-    // 渲染预测
     if (predResp && predResp.code === 200) {
         renderPredictions(predResp.data);
     }
-    
-    // 渲染高峰时段
     if (peakResp && peakResp.code === 200) {
         renderPeakHours(peakResp.data);
     }
-    
-    // 渲染TOP进程
     if (procResp && procResp.code === 200) {
         renderTopProcesses(procResp.data);
     }
@@ -167,8 +148,6 @@ function renderScore(score) {
             </div>
         </div>
     `;
-    
-    // 雷达图
     createChart('radarChart', {
         legend: { show: false },
         radar: {

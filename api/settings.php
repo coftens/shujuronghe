@@ -1,7 +1,5 @@
-<?php
-/**
- * 系统设置API
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 requireAdmin();
@@ -31,8 +29,6 @@ switch ($action) {
         logOperation('update_settings', 'settings', '更新系统设置');
         jsonResponse(200, '保存成功');
         break;
-    
-    // 用户管理
     case 'users':
         $users = db()->fetchAll("SELECT id, username, email, role, last_login, created_at FROM users ORDER BY id");
         jsonResponse(200, 'success', $users);

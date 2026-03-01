@@ -1,8 +1,5 @@
-<?php
-/**
- * 数据库连接类
- * 单例模式PDO封装
- */
+﻿<?php
+
 class Database {
     private static $instance = null;
     private $pdo;
@@ -39,53 +36,41 @@ class Database {
         return $this->pdo;
     }
     
-    /**
-     * 查询多条记录
-     */
+    
     public function fetchAll($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
     
-    /**
-     * 查询单条记录
-     */
+    
     public function fetch($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetch();
     }
     
-    /**
-     * 查询单个值
-     */
+    
     public function fetchColumn($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchColumn();
     }
     
-    /**
-     * 执行SQL（INSERT/UPDATE/DELETE）
-     */
+    
     public function execute($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute($params);
     }
     
-    /**
-     * 插入并返回ID
-     */
+    
     public function insert($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $this->pdo->lastInsertId();
     }
     
-    /**
-     * 批量插入
-     */
+    
     public function insertBatch($table, $rows) {
         if (empty($rows)) return 0;
         
@@ -106,9 +91,7 @@ class Database {
         return $stmt->rowCount();
     }
     
-    /**
-     * 开启事务
-     */
+    
     public function beginTransaction() {
         return $this->pdo->beginTransaction();
     }

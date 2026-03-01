@@ -1,7 +1,5 @@
-<?php
-/**
- * 服务器管理API
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
@@ -9,8 +7,6 @@ requireLogin();
 $action = input('action', 'list');
 
 switch ($action) {
-    
-    // 服务器列表
     case 'list':
         $servers = db()->fetchAll("SELECT * FROM servers ORDER BY id");
         foreach ($servers as &$s) {
@@ -18,8 +14,6 @@ switch ($action) {
         }
         jsonResponse(200, 'success', $servers);
         break;
-    
-    // 添加服务器
     case 'add':
         requireAdmin();
         $name = input('name');
@@ -46,8 +40,6 @@ switch ($action) {
             'install_command' => "curl -sSL {$baseUrl}/agent/install_agent.sh | bash -s -- {$baseUrl}/api/collect.php {$agentKey}"
         ]);
         break;
-    
-    // 编辑服务器
     case 'edit':
         requireAdmin();
         $id = intval(input('id'));
@@ -67,8 +59,6 @@ switch ($action) {
         logOperation('edit_server', "server#{$id}", "编辑服务器: {$name}");
         jsonResponse(200, '修改成功');
         break;
-    
-    // 删除服务器
     case 'delete':
         requireAdmin();
         $id = intval(input('id'));
@@ -76,8 +66,6 @@ switch ($action) {
         
         $server = db()->fetch("SELECT name FROM servers WHERE id = ?", [$id]);
         if (!$server) jsonResponse(404, '服务器不存在');
-        
-        // 删除关联数据
         $tables = ['metrics_cpu', 'metrics_memory', 'metrics_disk', 'metrics_disk_io', 
                     'metrics_network', 'metrics_process', 'metrics_tcp', 'metrics_ports', 
                     'system_logs', 'alert_history'];
@@ -89,8 +77,6 @@ switch ($action) {
         logOperation('delete_server', "server#{$id}", "删除服务器: {$server['name']}");
         jsonResponse(200, '删除成功');
         break;
-    
-    // 获取Agent安装信息
     case 'agent_info':
         $id = intval(input('id'));
         $server = db()->fetch("SELECT id, name, host, agent_key FROM servers WHERE id = ?", [$id]);
@@ -102,8 +88,6 @@ switch ($action) {
             'install_command' => "curl -sSL {$baseUrl}/agent/install_agent.sh | bash -s -- {$baseUrl}/api/collect.php {$server['agent_key']}"
         ]);
         break;
-    
-    // 重新生成Agent密钥
     case 'regenerate_key':
         requireAdmin();
         $id = intval(input('id'));

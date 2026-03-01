@@ -1,7 +1,5 @@
-<?php
-/**
- * 系统日志查询API
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
@@ -54,8 +52,6 @@ switch ($action) {
             'pagination' => $pagination
         ]);
         break;
-    
-    // 日志统计
     case 'stats':
         $serverId = intval(input('server_id', 0));
         $hours = intval(input('hours', 24));

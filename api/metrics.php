@@ -1,8 +1,5 @@
-<?php
-/**
- * 指标数据查询API
- * 为前端图表提供数据
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
@@ -14,8 +11,6 @@ $startTime = input('start_time', date('Y-m-d H:i:s', strtotime("-{$hours} hours"
 $endTime = input('end_time', date('Y-m-d H:i:s'));
 
 switch ($action) {
-    
-    // ====== 概览数据 ======
     case 'overview':
         $servers = db()->fetchAll("SELECT * FROM servers ORDER BY id");
         $totalServers = count($servers);
@@ -28,7 +23,6 @@ switch ($action) {
             if ($s['is_online']) {
                 $onlineCount++;
             }
-            // 获取最新指标
             $s['latest_cpu'] = db()->fetch(
                 "SELECT * FROM metrics_cpu WHERE server_id = ? ORDER BY recorded_at DESC LIMIT 1",
                 [$s['id']]
@@ -42,8 +36,6 @@ switch ($action) {
                 [$s['id'], $s['id']]
             );
         }
-        
-        // 活跃告警数
         $activeAlerts = db()->fetchColumn("SELECT COUNT(*) FROM alert_history WHERE status = 'active'");
         
         jsonResponse(200, 'success', [
@@ -56,8 +48,6 @@ switch ($action) {
             ]
         ]);
         break;
-    
-    // ====== CPU趋势 ======
     case 'cpu_trend':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -69,8 +59,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $data);
         break;
-    
-    // ====== 内存趋势 ======
     case 'memory_trend':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -82,8 +70,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $data);
         break;
-    
-    // ====== 磁盘趋势 ======
     case 'disk_trend':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -96,8 +82,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $data);
         break;
-    
-    // ====== 网络趋势 ======
     case 'network_trend':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -114,8 +98,6 @@ switch ($action) {
              FROM metrics_network WHERE server_id = ? AND recorded_at BETWEEN ? AND ? {$where} ORDER BY recorded_at",
             $params
         );
-        
-        // 计算带宽（相邻两条记录之差）
         $result = [];
         $prev = [];
         foreach ($data as $row) {
@@ -135,8 +117,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $result);
         break;
-    
-    // ====== 进程列表 ======
     case 'processes':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -151,8 +131,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $data);
         break;
-    
-    // ====== TCP连接趋势 ======
     case 'tcp_trend':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -163,8 +141,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $data);
         break;
-    
-    // ====== 端口列表 ======
     case 'ports':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         
@@ -175,8 +151,6 @@ switch ($action) {
         
         jsonResponse(200, 'success', $data);
         break;
-    
-    // ====== 最新指标快照 ======
     case 'latest':
         if (!$serverId) jsonResponse(400, '缺少server_id');
         

@@ -1,21 +1,17 @@
-<?php
-/**
- * 故障预警页面
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '故障预警');
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- Tabs -->
 <div class="tabs mb-2">
     <div class="tab-item active" onclick="switchAlertTab('history')">告警历史</div>
     <div class="tab-item" onclick="switchAlertTab('rules')">告警规则</div>
     <div class="tab-item" onclick="switchAlertTab('stats')">告警统计</div>
 </div>
 
-<!-- 告警历史 -->
 <div id="tabHistory">
     <div class="flex-between mb-2">
         <div class="form-inline">
@@ -49,7 +45,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 告警规则 -->
 <div id="tabRules" style="display:none;">
     <div class="flex-between mb-2">
         <div></div>
@@ -80,7 +75,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 告警统计 -->
 <div id="tabStats" style="display:none;">
     <div class="grid grid-2 mb-2">
         <div class="card">
@@ -98,7 +92,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 规则编辑模态框 -->
 <div class="modal-overlay" id="ruleModal">
     <div class="modal" style="width:560px;">
         <div class="modal-header">
@@ -250,8 +243,6 @@ async function loadAlertHistory(page = 1) {
             </div>
         </div>`;
     }).join('');
-    
-    // 分页
     const p = data.pagination;
     let phtml = '';
     if (p.total_pages > 1) {
@@ -360,8 +351,6 @@ async function loadAlertStats() {
     const resp = await api('/api/alerts.php', { action: 'stats', days: 7 });
     if (!resp || resp.code !== 200) return;
     const data = resp.data;
-    
-    // 告警趋势
     const dailyData = {};
     (data.daily || []).forEach(d => {
         if (!dailyData[d.date]) dailyData[d.date] = { warning: 0, danger: 0, critical: 0 };
@@ -380,8 +369,6 @@ async function loadAlertStats() {
             { name: '紧急', type: 'bar', stack: 'alert', data: dates.map(d => dailyData[d]?.critical || 0) },
         ]
     });
-    
-    // 类型分布
     createChart('alertTypeChart', {
         tooltip: { trigger: 'item' },
         series: [{
@@ -389,8 +376,6 @@ async function loadAlertStats() {
             data: (data.by_type || []).map(t => ({ name: t.metric_type, value: t.count }))
         }]
     });
-    
-    // 服务器统计
     createChart('alertServerChart', {
         tooltip: { trigger: 'axis' },
         xAxis: { type: 'category', data: (data.by_server || []).map(s => s.name || '未知') },
@@ -398,8 +383,6 @@ async function loadAlertStats() {
         series: [{ type: 'bar', data: (data.by_server || []).map(s => s.count), itemStyle: { borderRadius: [4, 4, 0, 0] } }]
     });
 }
-
-// 初始化
 loadAlertHistory();
 </script>
 

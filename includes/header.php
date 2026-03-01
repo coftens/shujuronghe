@@ -1,7 +1,5 @@
-<?php
-/**
- * 公共头部模板
- */
+﻿<?php
+
 if (!defined('PAGE_TITLE')) define('PAGE_TITLE', '仪表盘');
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 ?>
@@ -12,13 +10,13 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo e(PAGE_TITLE); ?> - 多源数据融合主机性能分析与故障预警平台</title>
     <link rel="stylesheet" href="/assets/css/style.css">
-    <!-- ECharts -->
+    
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="/assets/js/app.js"></script>
 </head>
 <body>
 <div class="layout">
-    <!-- 侧边栏 -->
+    
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <span class="logo-icon">
@@ -60,9 +58,9 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         </ul>
     </aside>
     
-    <!-- 主内容 -->
+    
     <div class="main-content">
-        <!-- 顶部导航 -->
+        
         <header class="header">
             <div class="header-left">
                 <button class="btn btn-sm icon-btn" onclick="document.getElementById('sidebar').classList.toggle('show')" style="display:none" id="menuToggle">
@@ -93,5 +91,5 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             </div>
         </header>
         
-        <!-- 页面内容 -->
+        
         <div class="page-content">

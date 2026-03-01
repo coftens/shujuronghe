@@ -1,9 +1,4 @@
-/**
- * 全局JS工具库
- */
-
-// Toast通知
-function showToast(msg, type = 'success', duration = 3000) {
+﻿function showToast(msg, type = 'success', duration = 3000) {
     let container = document.querySelector('.toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -23,8 +18,6 @@ function showToast(msg, type = 'success', duration = 3000) {
         setTimeout(() => toast.remove(), 300);
     }, duration);
 }
-
-// API请求封装
 async function api(url, params = {}, method = 'GET') {
     try {
         let options = { method, headers: {} };
@@ -52,8 +45,6 @@ async function api(url, params = {}, method = 'GET') {
         return null;
     }
 }
-
-// 格式化字节
 function formatBytes(bytes, precision = 2) {
     if (bytes === 0) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -61,13 +52,9 @@ function formatBytes(bytes, precision = 2) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return (bytes / Math.pow(k, i)).toFixed(precision) + ' ' + units[i];
 }
-
-// 格式化KB
 function formatKB(kb, precision = 2) {
     return formatBytes(kb * 1024, precision);
 }
-
-// 时间格式化
 function timeAgo(datetime) {
     const now = new Date();
     const past = new Date(datetime);
@@ -80,15 +67,11 @@ function timeAgo(datetime) {
     if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
     return datetime;
 }
-
-// 获取进度条颜色
 function getProgressColor(pct) {
     if (pct >= 90) return 'red';
     if (pct >= 70) return 'yellow';
     return 'green';
 }
-
-// 创建进度条HTML
 function progressBar(pct, showText = true) {
     const color = getProgressColor(pct);
     let html = `<div class="progress-bar"><div class="progress-fill ${color}" style="width:${Math.min(pct, 100)}%"></div></div>`;
@@ -97,8 +80,6 @@ function progressBar(pct, showText = true) {
     }
     return html;
 }
-
-// 状态标签
 function statusBadge(status) {
     const map = {
         'online': '<span class="badge badge-success"><span class="status-dot online"></span>在线</span>',
@@ -108,8 +89,6 @@ function statusBadge(status) {
     };
     return map[status] || map['offline'];
 }
-
-// 严重级别标签
 function severityBadge(severity) {
     const map = {
         'info': '<span class="badge badge-info">提示</span>',
@@ -119,13 +98,9 @@ function severityBadge(severity) {
     };
     return map[severity] || map['info'];
 }
-
-// 确认对话框
 function confirmAction(msg) {
     return confirm(msg);
 }
-
-// 模态框控制
 function showModal(id) {
     document.getElementById(id).classList.add('show');
 }
@@ -133,8 +108,6 @@ function showModal(id) {
 function hideModal(id) {
     document.getElementById(id).classList.remove('show');
 }
-
-// 自动刷新
 let autoRefreshTimer = null;
 function startAutoRefresh(callback, interval = 60000) {
     stopAutoRefresh();
@@ -148,8 +121,6 @@ function stopAutoRefresh() {
         autoRefreshTimer = null;
     }
 }
-
-// 更新通知数量
 async function updateNotificationCount() {
     const resp = await api('/api/notifications.php', { action: 'unread_count' });
     if (resp && resp.code === 200) {
@@ -161,14 +132,9 @@ async function updateNotificationCount() {
         }
     }
 }
-
-// 页面加载完成后
 document.addEventListener('DOMContentLoaded', function() {
-    // 定时更新通知
     updateNotificationCount();
     setInterval(updateNotificationCount, 30000);
-    
-    // 侧边栏当前菜单高亮
     const path = window.location.pathname;
     document.querySelectorAll('.sidebar-menu a').forEach(a => {
         if (a.getAttribute('href') === path) {
@@ -176,8 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// ECharts通用主题配置
 const chartTheme = {
     color: ['#1890ff', '#52c41a', '#faad14', '#ff4d4f', '#13c2c2', '#722ed1', '#eb2f96', '#fa8c16'],
     grid: {
@@ -198,8 +162,6 @@ const chartTheme = {
         textStyle: { fontSize: 12 }
     },
 };
-
-// 创建ECharts实例的工具函数
 function createChart(domId, option) {
     const dom = document.getElementById(domId);
     if (!dom) return null;
@@ -211,13 +173,9 @@ function createChart(domId, option) {
     
     const mergedOption = Object.assign({}, chartTheme, option);
     chart.setOption(mergedOption, true);
-    
-    // 响应式
     window.addEventListener('resize', () => chart.resize());
     return chart;
 }
-
-// 格式化时间轴
 function formatTimeAxis(data, field = 'recorded_at') {
     return data.map(d => {
         const t = new Date(d[field]);

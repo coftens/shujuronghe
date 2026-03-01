@@ -1,7 +1,5 @@
-<?php
-/**
- * 服务器管理页面
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '服务器管理');
@@ -36,7 +34,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 添加服务器模态框 -->
 <div class="modal-overlay" id="addServerModal">
     <div class="modal">
         <div class="modal-header">
@@ -65,7 +62,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Agent信息模态框 -->
 <div class="modal-overlay" id="agentInfoModal">
     <div class="modal" style="width:640px;">
         <div class="modal-header">
@@ -145,8 +141,6 @@ async function saveServer() {
         showToast(resp.msg);
         hideModal('addServerModal');
         loadServers();
-        
-        // 新添加的显示Agent信息
         if (id == 0 && resp.data) {
             document.getElementById('agentKeyDisplay').value = resp.data.agent_key;
             document.getElementById('installCmdDisplay').value = resp.data.install_command;
@@ -191,13 +185,9 @@ function copyInstallCmd() {
     document.execCommand('copy');
     showToast('已复制到剪贴板');
 }
-
-// 重置表单
 document.getElementById('addServerModal').addEventListener('click', function(e) {
     if (e.target === this) hideModal('addServerModal');
 });
-
-// 初始化
 loadServers();
 </script>
 

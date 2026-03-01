@@ -1,8 +1,5 @@
-<?php
-/**
- * 定时任务 - 数据清理
- * 建议每天凌晨执行一次: 0 2 * * * php /path/to/cron/cleanup.php
- */
+﻿<?php
+
 define('CRON_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 
@@ -37,7 +34,6 @@ foreach ($tables as $table => $timeField) {
         );
         
         if ($count > 0) {
-            // 分批删除避免锁表
             $batchSize = 10000;
             $deleted = 0;
             do {
@@ -55,24 +51,18 @@ foreach ($tables as $table => $timeField) {
         echo "  {$table}: 清理失败 - " . $e->getMessage() . "\n";
     }
 }
-
-// 检查离线服务器
 $offlineThreshold = 5 * 60; // 5分钟无数据视为离线
 $db->execute(
     "UPDATE servers SET status = 'offline' 
      WHERE status = 'online' AND last_heartbeat < DATE_SUB(NOW(), INTERVAL ? SECOND)",
     [$offlineThreshold]
 );
-
-// 自动解决24小时前的活跃告警
 $autoResolve = $db->execute(
     "UPDATE alert_history SET status = 'resolved', resolved_at = NOW() 
      WHERE status = 'active' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)"
 );
 
 echo date('[Y-m-d H:i:s]') . " 清理完成，共清理 {$totalCleaned} 条历史数据\n";
-
-// 优化表（每月第一天执行）
 if (date('d') === '01') {
     echo "执行表优化...\n";
     foreach (array_keys($tables) as $table) {

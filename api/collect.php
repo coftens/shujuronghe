@@ -1,23 +1,14 @@
-<?php
-/**
- * 数据采集接口
- * Agent通过POST将采集的数据发送到此接口
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
-
-// 只接受POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(405, '方法不允许');
 }
-
-// 获取JSON数据
 $data = getJsonInput();
 if ($data === null) {
     jsonResponse(400, '无效的请求数据: ' . json_last_error_msg());
 }
-
-// 验证Agent密钥
 $agentKey = $data['agent_key'] ?? '';
 if (empty($agentKey)) {
     jsonResponse(401, '缺少Agent密钥');
@@ -33,15 +24,11 @@ $timestamp = $data['timestamp'] ?? date('Y-m-d H:i:s');
 
 try {
     db()->beginTransaction();
-    
-    // 1. 更新服务器心跳和系统信息
     $sysinfo = $data['sysinfo'] ?? [];
     db()->execute(
         "UPDATE servers SET status = 'online', last_heartbeat = NOW(), os_info = ? WHERE id = ?",
         [$sysinfo['os_info'] ?? $server['os_info'], $serverId]
     );
-    
-    // 2. 存储CPU指标
     if (!empty($data['cpu'])) {
         $cpu = $data['cpu'];
         db()->execute(
@@ -61,8 +48,6 @@ try {
             ]
         );
     }
-    
-    // 3. 存储内存指标
     if (!empty($data['memory'])) {
         $mem = $data['memory'];
         db()->execute(
@@ -82,8 +67,6 @@ try {
             ]
         );
     }
-    
-    // 4. 存储磁盘指标
     if (!empty($data['disk']) && is_array($data['disk'])) {
         foreach ($data['disk'] as $disk) {
             db()->execute(
@@ -102,8 +85,6 @@ try {
             );
         }
     }
-    
-    // 5. 存储网络指标
     if (!empty($data['network']) && is_array($data['network'])) {
         foreach ($data['network'] as $net) {
             db()->execute(
@@ -122,8 +103,6 @@ try {
             );
         }
     }
-    
-    // 6. 存储进程信息
     if (!empty($data['processes']) && is_array($data['processes'])) {
         foreach ($data['processes'] as $proc) {
             db()->execute(
@@ -143,8 +122,6 @@ try {
             );
         }
     }
-    
-    // 7. 存储TCP连接状态
     if (!empty($data['tcp'])) {
         $tcp = $data['tcp'];
         db()->execute(
@@ -164,8 +141,6 @@ try {
             ]
         );
     }
-    
-    // 8. 存储端口信息（先清除旧数据再插入）
     if (!empty($data['ports']) && is_array($data['ports'])) {
         foreach ($data['ports'] as $port) {
             db()->execute(
@@ -180,8 +155,6 @@ try {
             );
         }
     }
-    
-    // 9. 存储系统日志
     if (!empty($data['logs']) && is_array($data['logs'])) {
         foreach ($data['logs'] as $log) {
             db()->execute(

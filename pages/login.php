@@ -1,10 +1,6 @@
-<?php
-/**
- * 登录页面
- */
-require_once __DIR__ . '/../includes/init.php';
+﻿<?php
 
-// 已登录则跳转
+require_once __DIR__ . '/../includes/init.php';
 if (isLoggedIn()) {
     header('Location: /pages/dashboard.php');
     exit;
@@ -33,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <div class="login-page">
-    <!-- 左侧品牌区 -->
+    
     <div class="login-left">
         <div class="login-brand">
             <div class="login-brand-icon">
@@ -66,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- 右侧登录表单 -->
+    
     <div class="login-right">
         <div class="login-form-wrap">
             <div class="login-title">欢迎回来</div>

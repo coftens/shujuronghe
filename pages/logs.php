@@ -1,7 +1,5 @@
-<?php
-/**
- * 系统日志页面
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '系统日志');
@@ -58,7 +56,6 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
-// 加载服务器列表
 (async function init() {
     const resp = await api('/api/servers.php', { action: 'list' });
     if (resp && resp.code === 200) {
@@ -105,8 +102,6 @@ async function loadLogs(page = 1) {
             <td style="max-width:500px;word-break:break-all;">${log.message || '-'}</td>
         </tr>
     `).join('');
-    
-    // 分页
     const p = data.pagination;
     let phtml = '';
     if (p.total_pages > 1) {
@@ -118,8 +113,6 @@ async function loadLogs(page = 1) {
     }
     document.getElementById('logPagination').innerHTML = `<div class="pagination">${phtml}</div><div class="text-center text-muted mt-1" style="font-size:12px;">共 ${p.total} 条</div>`;
 }
-
-// 回车搜索
 document.getElementById('logKeyword').addEventListener('keyup', function(e) {
     if (e.key === 'Enter') loadLogs();
 });

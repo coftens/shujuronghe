@@ -1,7 +1,5 @@
-<?php
-/**
- * 用户认证API
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 

@@ -1,18 +1,11 @@
-<?php
-/**
- * 定时任务 - 告警检查
- * 建议每分钟执行一次: * * * * * php /path/to/cron/check_alerts.php
- */
+﻿<?php
+
 define('CRON_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 
 $db = db();
-
-// 获取所有启用的告警规则
 $rules = $db->fetchAll("SELECT * FROM alert_rules WHERE enabled = 1");
 if (empty($rules)) exit;
-
-// 获取所有在线服务器
 $servers = $db->fetchAll("SELECT * FROM servers WHERE status = 'online'");
 if (empty($servers)) exit;
 
@@ -29,15 +22,9 @@ function checkRule($db, $server, $rule) {
     $condition = $rule['condition'];
     $threshold = (float) $rule['threshold'];
     $severity = $rule['severity'];
-    
-    // 跳过 server 类型的规则（如掉线检测，由其他机制处理）
     if ($metricType === 'server') return;
-    
-    // 获取最新指标值
     $value = getLatestMetricValue($db, $serverId, $metricType, $metricField);
     if ($value === null) return;
-    
-    // 条件判断
     $triggered = false;
     switch ($condition) {
         case 'gt':  $triggered = $value > $threshold; break;
@@ -47,15 +34,12 @@ function checkRule($db, $server, $rule) {
         case 'eq':  $triggered = $value == $threshold; break;
         case 'neq': $triggered = $value != $threshold; break;
     }
-    
-    // 查找当前是否有活跃告警
     $activeAlert = $db->fetch(
         "SELECT id FROM alert_history WHERE server_id = ? AND rule_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
         [$serverId, $rule['id']]
     );
     
     if (!$triggered) {
-        // 条件恢复：如果有活跃告警，标记为已解决
         if ($activeAlert) {
             $db->execute(
                 "UPDATE alert_history SET status = 'resolved', resolved_at = NOW() WHERE id = ?",
@@ -65,18 +49,13 @@ function checkRule($db, $server, $rule) {
         }
         return;
     }
-    
-    // 条件触发中：如果已有活跃告警，不重复发送
     if ($activeAlert) {
-        // 更新最新指标值
         $db->execute(
             "UPDATE alert_history SET metric_value = ? WHERE id = ?",
             [$value, $activeAlert['id']]
         );
         return;
     }
-    
-    // 新触发：创建告警记录并发送通知
     $condSymbols = ['gt'=>'>','gte'=>'>=','lt'=>'<','lte'=>'<=','eq'=>'=','neq'=>'!='];
     $symbol = $condSymbols[$condition] ?? $condition;
     $message = sprintf(
@@ -88,11 +67,7 @@ function checkRule($db, $server, $rule) {
         "INSERT INTO alert_history (server_id, rule_id, rule_name, severity, metric_type, metric_value, threshold, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())",
         [$serverId, $rule['id'], $rule['name'], $severity, $metricType, $value, $threshold, $message]
     );
-    
-    // 站内通知
     notifyAllAdmins("⚠ {$message}", $severity === 'critical' ? 'alert' : 'warning');
-    
-    // 邮件通知
     if (getSetting('enable_email_notify') === '1') {
         sendAlertEmail($db, $server, $rule, $message, $value);
     }
@@ -112,8 +87,6 @@ function getLatestMetricValue($db, $serverId, $metricType, $field) {
     
     $table = $tableMap[$metricType] ?? null;
     if (!$table) return null;
-    
-    // 检查字段是否存在于该表
     $allowedFields = [
         'metrics_cpu'     => ['cpu_user', 'cpu_system', 'cpu_idle', 'cpu_iowait', 'cpu_steal', 'cpu_usage', 'load_1', 'load_5', 'load_15'],
         'metrics_memory'  => ['mem_usage_pct', 'mem_total', 'mem_used', 'mem_free', 'mem_available', 'swap_total', 'swap_used', 'swap_used_pct'],
@@ -124,8 +97,6 @@ function getLatestMetricValue($db, $serverId, $metricType, $field) {
     ];
     
     if (!in_array($field, $allowedFields[$table] ?? [])) return null;
-    
-    // 处理计算字段
     if ($table === 'metrics_cpu' && $field === 'cpu_usage') {
         $row = $db->fetch(
             "SELECT (100 - cpu_idle) as val FROM `{$table}` WHERE server_id = ? ORDER BY recorded_at DESC LIMIT 1",
@@ -159,8 +130,6 @@ function sendAlertEmail($db, $server, $rule, $message, $value) {
     $smtpFrom = getSetting('smtp_from');
     
     if (!$smtpHost || !$smtpUser || !$smtpPass) return;
-    
-    // 获取所有管理员邮箱
     $admins = $db->fetchAll("SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''");
     if (empty($admins)) return;
     
@@ -191,9 +160,6 @@ function sendAlertEmail($db, $server, $rule, $message, $value) {
     }
 }
 
-/**
- * 使用 SMTP 发送邮件（不依赖第三方库）
- */
 function smtpSend($host, $port, $encryption, $user, $pass, $from, $to, $subject, $body) {
     try {
         $prefix = ($encryption === 'ssl') ? 'ssl://' : '';

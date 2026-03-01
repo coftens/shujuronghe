@@ -1,7 +1,5 @@
-<?php
-/**
- * 性能指标详情页
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '性能指标');
@@ -34,7 +32,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- 实时指标 -->
 <div class="stat-cards" id="liveMetrics" style="display:none;">
     <div class="stat-card">
         <div class="stat-icon blue">⚡</div>
@@ -74,7 +71,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- Tabs -->
 <div class="tabs" id="metricTabs">
     <div class="tab-item active" data-tab="cpu" onclick="switchTab('cpu')">CPU & 负载</div>
     <div class="tab-item" data-tab="memory" onclick="switchTab('memory')">内存</div>
@@ -85,7 +81,6 @@ $serverId = intval(input('server_id', 0));
     <div class="tab-item" data-tab="ports" onclick="switchTab('ports')">端口</div>
 </div>
 
-<!-- CPU -->
 <div class="tab-content" id="tab-cpu">
     <div class="grid grid-2">
         <div class="card">
@@ -99,7 +94,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- 内存 -->
 <div class="tab-content" id="tab-memory" style="display:none;">
     <div class="grid grid-2">
         <div class="card">
@@ -113,7 +107,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- 磁盘 -->
 <div class="tab-content" id="tab-disk" style="display:none;">
     <div class="card">
         <div class="card-header">
@@ -129,7 +122,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- 网络 -->
 <div class="tab-content" id="tab-network" style="display:none;">
     <div class="card">
         <div class="card-header">网络流量趋势</div>
@@ -137,7 +129,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- TCP -->
 <div class="tab-content" id="tab-tcp" style="display:none;">
     <div class="grid grid-2">
         <div class="card">
@@ -151,7 +142,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- 进程 -->
 <div class="tab-content" id="tab-process" style="display:none;">
     <div class="card">
         <div class="card-header">
@@ -174,7 +164,6 @@ $serverId = intval(input('server_id', 0));
     </div>
 </div>
 
-<!-- 端口 -->
 <div class="tab-content" id="tab-ports" style="display:none;">
     <div class="card">
         <div class="card-header">监听端口</div>
@@ -191,8 +180,6 @@ $serverId = intval(input('server_id', 0));
 
 <script>
 const defaultServerId = <?php echo $serverId ?: 0; ?>;
-
-// 初始化
 (async function init() {
     const resp = await api('/api/servers.php', { action: 'list' });
     if (resp && resp.code === 200) {
@@ -231,8 +218,6 @@ function switchTab(tab) {
     document.querySelector(`.tab-item[data-tab="${tab}"]`).classList.add('active');
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     document.getElementById('tab-' + tab).style.display = 'block';
-    
-    // 加载对应数据
     loadTabData(tab);
 }
 
@@ -344,7 +329,6 @@ async function loadMemMetrics(sid, hours) {
 }
 
 async function loadDiskMetrics(sid, hours) {
-    // 当前磁盘使用
     const latestResp = await api('/api/metrics.php', { action: 'latest', server_id: sid });
     if (latestResp && latestResp.code === 200 && latestResp.data.disks) {
         const disks = latestResp.data.disks;
@@ -365,8 +349,6 @@ async function loadDiskMetrics(sid, hours) {
                 `).join('')}
             </div>
         `;
-        
-        // 趋势图
         if (disks.length > 0) {
             const trendResp = await api('/api/metrics.php', { action: 'disk_trend', server_id: sid, hours: hours, mount: disks[0].mount_point });
             if (trendResp && trendResp.code === 200) {
@@ -407,8 +389,6 @@ async function loadTcpMetrics(sid, hours) {
     const resp = await api('/api/metrics.php', { action: 'tcp_trend', server_id: sid, hours: hours });
     if (!resp || resp.code !== 200) return;
     const data = resp.data;
-    
-    // 最新的状态饼图
     if (data.length > 0) {
         const latest = data[data.length - 1];
         createChart('tcpPieChart', {

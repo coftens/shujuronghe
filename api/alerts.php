@@ -1,7 +1,5 @@
-<?php
-/**
- * 告警管理API
- */
+﻿<?php
+
 define('API_MODE', true);
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
@@ -9,8 +7,6 @@ requireLogin();
 $action = input('action', 'list');
 
 switch ($action) {
-    
-    // 告警历史列表
     case 'list':
         $page = max(1, intval(input('page', 1)));
         $perPage = 20;
@@ -55,8 +51,6 @@ switch ($action) {
             'pagination' => $pagination
         ]);
         break;
-    
-    // 活跃告警
     case 'active':
         $alerts = db()->fetchAll(
             "SELECT ah.*, s.name as server_name, s.host as server_host 
@@ -68,8 +62,6 @@ switch ($action) {
         );
         jsonResponse(200, 'success', $alerts);
         break;
-    
-    // 确认告警
     case 'acknowledge':
         $id = intval(input('id'));
         if (!$id) jsonResponse(400, '缺少ID');
@@ -82,8 +74,6 @@ switch ($action) {
         logOperation('ack_alert', "alert#{$id}", '确认告警');
         jsonResponse(200, '已确认');
         break;
-    
-    // 解决告警
     case 'resolve':
         $id = intval(input('id'));
         if (!$id) jsonResponse(400, '缺少ID');
@@ -96,8 +86,6 @@ switch ($action) {
         logOperation('resolve_alert', "alert#{$id}", '解决告警');
         jsonResponse(200, '已解决');
         break;
-    
-    // 批量解决
     case 'resolve_all':
         requireAdmin();
         $serverId = intval(input('server_id', 0));
@@ -115,14 +103,10 @@ switch ($action) {
         
         jsonResponse(200, '已全部解决');
         break;
-    
-    // 告警规则列表
     case 'rules':
         $rules = db()->fetchAll("SELECT ar.*, s.name as server_name FROM alert_rules ar LEFT JOIN servers s ON ar.server_id = s.id ORDER BY ar.id");
         jsonResponse(200, 'success', $rules);
         break;
-    
-    // 添加/编辑告警规则
     case 'save_rule':
         requireAdmin();
         $id = intval(input('id', 0));
@@ -157,8 +141,6 @@ switch ($action) {
         
         jsonResponse(200, '保存成功', ['id' => $id]);
         break;
-    
-    // 删除告警规则
     case 'delete_rule':
         requireAdmin();
         $id = intval(input('id'));
@@ -168,8 +150,6 @@ switch ($action) {
         logOperation('delete_rule', "rule#{$id}", '删除告警规则');
         jsonResponse(200, '删除成功');
         break;
-    
-    // 切换规则启用/禁用
     case 'toggle_rule':
         requireAdmin();
         $id = intval(input('id'));
@@ -178,13 +158,9 @@ switch ($action) {
         db()->execute("UPDATE alert_rules SET enabled = 1 - enabled WHERE id = ?", [$id]);
         jsonResponse(200, '已切换');
         break;
-    
-    // 告警统计
     case 'stats':
         $days = intval(input('days', 7));
         $startDate = date('Y-m-d', strtotime("-{$days} days"));
-        
-        // 按天统计
         $daily = db()->fetchAll(
             "SELECT DATE(created_at) as date, severity, COUNT(*) as count 
              FROM alert_history WHERE created_at >= ? 
@@ -192,16 +168,12 @@ switch ($action) {
              ORDER BY date",
             [$startDate]
         );
-        
-        // 按类型统计
         $byType = db()->fetchAll(
             "SELECT metric_type, COUNT(*) as count 
              FROM alert_history WHERE created_at >= ? 
              GROUP BY metric_type ORDER BY count DESC",
             [$startDate]
         );
-        
-        // 按服务器统计
         $byServer = db()->fetchAll(
             "SELECT s.name, COUNT(*) as count 
              FROM alert_history ah 

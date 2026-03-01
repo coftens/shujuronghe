@@ -1,7 +1,5 @@
-<?php
-/**
- * 系统设置页面
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '系统设置');
@@ -20,7 +18,6 @@ $currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['u
     <?php endif; ?>
 </div>
 
-<!-- 个人设置 -->
 <div id="tabProfile">
     <div class="card" style="max-width:600px;">
         <div class="card-header">个人信息</div>
@@ -62,7 +59,7 @@ $currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['u
 </div>
 
 <?php if ($isAdmin): ?>
-<!-- 系统配置 -->
+
 <div id="tabSystem" style="display:none;">
     <div class="card" style="max-width:600px;">
         <div class="card-header">系统配置</div>
@@ -72,7 +69,6 @@ $currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['u
     </div>
 </div>
 
-<!-- 邮件通知 -->
 <div id="tabEmail" style="display:none;">
     <div class="card" style="max-width:600px;">
         <div class="card-header">邮件通知配置</div>
@@ -82,7 +78,6 @@ $currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['u
     </div>
 </div>
 
-<!-- 用户管理 -->
 <div id="tabUsers" style="display:none;">
     <div class="flex-between mb-2">
         <div></div>
@@ -102,7 +97,6 @@ $currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['u
     </div>
 </div>
 
-<!-- 添加用户模态框 -->
 <div class="modal-overlay" id="addUserModal">
     <div class="modal">
         <div class="modal-header">
@@ -137,7 +131,6 @@ $currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['u
     </div>
 </div>
 
-<!-- 编辑用户模态框 -->
 <div class="modal-overlay" id="editUserModal">
     <div class="modal">
         <div class="modal-header">
@@ -200,7 +193,6 @@ async function saveProfile() {
     }, 'POST');
     if (resp && resp.code === 200) {
         showToast('保存成功');
-        // 同步更新页面显示
         document.getElementById('profileEmail').value = resp.data?.email || document.getElementById('profileEmail').value;
     } else showToast(resp?.msg || '保存失败', 'error');
 }

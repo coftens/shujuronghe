@@ -1,14 +1,11 @@
-<?php
-/**
- * 仪表盘 - 主页
- */
+﻿<?php
+
 require_once __DIR__ . '/../includes/init.php';
 requireLogin();
 define('PAGE_TITLE', '仪表盘');
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- 统计卡片 -->
 <div class="stat-cards" id="statCards">
     <div class="stat-card">
         <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
@@ -40,7 +37,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 服务器总览 -->
 <div class="card mb-2">
     <div class="card-header">
         <span>服务器总览</span>
@@ -53,7 +49,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 图表区 -->
 <div class="grid grid-2">
     <div class="card">
         <div class="card-header">
@@ -75,7 +70,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 最近告警 -->
 <div class="card mt-2">
     <div class="card-header">
         <span>最近告警</span>
@@ -95,26 +89,16 @@ async function loadDashboard() {
     
     const data = resp.data;
     serverList = data.servers;
-    
-    // 更新统计
     document.getElementById('totalServers').textContent = data.stats.total_servers;
     document.getElementById('onlineServers').textContent = data.stats.online;
     document.getElementById('offlineServers').textContent = data.stats.offline;
     document.getElementById('activeAlerts').textContent = data.stats.active_alerts;
-    
-    // 渲染服务器卡片
     renderServerCards(data.servers);
-    
-    // 填充图表选择器
     fillServerSelects(data.servers);
-    
-    // 加载图表
     if (data.servers.length > 0) {
         loadCpuChart();
         loadMemChart();
     }
-    
-    // 加载最近告警
     loadRecentAlerts();
 }
 
@@ -259,8 +243,6 @@ async function acknowledgeAlert(id) {
         loadRecentAlerts();
     }
 }
-
-// 自动刷新
 startAutoRefresh(loadDashboard, 60000);
 </script>
 
