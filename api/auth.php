@@ -67,7 +67,7 @@ switch ($action) {
         $email = input('email');
         db()->execute("UPDATE users SET email = ? WHERE id = ?", [$email, $_SESSION['user_id']]);
         $_SESSION['user_email'] = $email;
-        jsonResponse(200, '更新成功');
+        jsonResponse(200, '更新成功', ['email' => $email]);
         break;
     
     default:

@@ -8,6 +8,7 @@ define('PAGE_TITLE', '系统设置');
 require_once __DIR__ . '/../includes/header.php';
 
 $isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
+$currentUser = db()->fetch("SELECT email FROM users WHERE id = ?", [$_SESSION['user_id']]);
 ?>
 
 <div class="tabs mb-2">
@@ -34,7 +35,7 @@ $isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
             </div>
             <div class="form-group">
                 <label>邮箱</label>
-                <input type="email" id="profileEmail" class="form-control" value="<?php echo e($_SESSION['user_email'] ?? ''); ?>" placeholder="用于接收告警通知">
+                <input type="email" id="profileEmail" class="form-control" value="<?php echo e($currentUser['email'] ?? ''); ?>" placeholder="用于接收告警通知">
             </div>
             <button class="btn btn-primary" onclick="saveProfile()">保存</button>
         </div>
@@ -135,6 +136,42 @@ $isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
         </div>
     </div>
 </div>
+
+<!-- 编辑用户模态框 -->
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span>编辑用户</span>
+            <button class="modal-close" onclick="hideModal('editUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editUserId">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="editUsername" class="form-control" disabled style="background:#f5f5f5;">
+            </div>
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" id="editUserEmail" class="form-control" placeholder="用于接收告警通知">
+            </div>
+            <div class="form-group">
+                <label>角色</label>
+                <select id="editUserRole" class="form-control">
+                    <option value="viewer">查看者</option>
+                    <option value="admin">管理员</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>新密码 <small class="text-muted">（不填则不修改）</small></label>
+                <input type="password" id="editUserPassword" class="form-control" placeholder="留空表示不修改">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="hideModal('editUserModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveEditUser()">保存</button>
+        </div>
+    </div>
+</div>
 <?php endif; ?>
 
 <script>
@@ -161,8 +198,11 @@ async function saveProfile() {
         action: 'update_profile',
         email: document.getElementById('profileEmail').value,
     }, 'POST');
-    if (resp && resp.code === 200) showToast('保存成功');
-    else showToast(resp?.msg || '保存失败', 'error');
+    if (resp && resp.code === 200) {
+        showToast('保存成功');
+        // 同步更新页面显示
+        document.getElementById('profileEmail').value = resp.data?.email || document.getElementById('profileEmail').value;
+    } else showToast(resp?.msg || '保存失败', 'error');
 }
 
 async function changePassword() {
@@ -265,8 +305,35 @@ async function loadEmailSettings() {
             <label>发件人地址</label>
             <input type="email" id="set_smtp_from" class="form-control" value="${s.smtp_from || ''}">
         </div>
-        <button class="btn btn-primary" onclick="saveEmailSettings()">保存</button>
+        <div class="form-group" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+            <label>测试收件地址</label>
+            <input type="email" id="set_test_email_to" class="form-control" placeholder="输入测试收件人邮箱" value="${s.smtp_user || ''}">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn btn-primary" onclick="saveEmailSettings()">保存</button>
+            <button class="btn" onclick="sendTestEmail()" style="background:#52c41a;color:#fff;">发送测试邮件</button>
+        </div>
     `;
+}
+
+async function sendTestEmail() {
+    const to = document.getElementById('set_test_email_to')?.value;
+    if (!to) { showToast('请填写测试收件人地址', 'error'); return; }
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = '发送中...';
+    const resp = await api('/api/settings.php', {
+        action: 'test_email',
+        smtp_host: document.getElementById('set_smtp_host').value,
+        smtp_port: document.getElementById('set_smtp_port').value,
+        smtp_encryption: document.getElementById('set_smtp_encryption').value,
+        smtp_user: document.getElementById('set_smtp_user').value,
+        smtp_pass: document.getElementById('set_smtp_pass').value,
+        smtp_from: document.getElementById('set_smtp_from').value,
+        to: to,
+    }, 'POST');
+    btn.disabled = false; btn.textContent = '发送测试邮件';
+    if (resp && resp.code === 200) showToast('测试邮件发送成功，请检查收件箱');
+    else showToast(resp?.msg || '发送失败', 'error');
 }
 
 async function saveEmailSettings() {
@@ -295,7 +362,8 @@ async function loadUsers() {
             <td>${u.role === 'admin' ? '<span class="badge badge-info">管理员</span>' : '<span class="badge badge-default">查看者</span>'}</td>
             <td>${u.last_login || '-'}</td>
             <td>
-                ${u.id != <?php echo $_SESSION['user_id']; ?> ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.username}')">删除</button>` : '<span class="text-muted">当前用户</span>'}
+                <button class="btn btn-sm btn-primary" onclick="editUser(${u.id}, '${u.username}', '${u.email || ''}', '${u.role}')"> 编辑</button>
+                ${u.id != <?php echo $_SESSION['user_id']; ?> ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.username}')"> 删除</button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -323,6 +391,38 @@ async function deleteUser(id, name) {
     if (!confirmAction(`确定删除用户 "${name}" 吗？`)) return;
     const resp = await api('/api/settings.php', { action: 'delete_user', id: id }, 'POST');
     if (resp && resp.code === 200) { showToast('已删除'); loadUsers(); }
+}
+
+function editUser(id, username, email, role) {
+    document.getElementById('editUserId').value = id;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editUserEmail').value = email;
+    document.getElementById('editUserRole').value = role;
+    document.getElementById('editUserPassword').value = '';
+    showModal('editUserModal');
+}
+
+async function saveEditUser() {
+    const id = document.getElementById('editUserId').value;
+    const email = document.getElementById('editUserEmail').value;
+    const role = document.getElementById('editUserRole').value;
+    const password = document.getElementById('editUserPassword').value;
+    
+    const resp = await api('/api/settings.php', {
+        action: 'edit_user',
+        id: id,
+        email: email,
+        role: role,
+        password: password,
+    }, 'POST');
+    
+    if (resp && resp.code === 200) {
+        showToast('保存成功');
+        hideModal('editUserModal');
+        loadUsers();
+    } else {
+        showToast(resp?.msg || '保存失败', 'error');
+    }
 }
 </script>
 
