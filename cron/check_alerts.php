@@ -29,19 +29,6 @@ function checkRule($db, $server, $rule) {
     $condition = $rule['condition'];
     $threshold = (float) $rule['threshold'];
     $severity = $rule['severity'];
-    $cooldown = (int) $rule['cooldown'];
-    
-    // 冷却检查 - 避免重复告警
-    if ($cooldown > 0) {
-        $lastAlert = $db->fetch(
-            "SELECT created_at FROM alert_history 
-             WHERE server_id = ? AND rule_id = ? AND status != 'resolved'
-             AND created_at > DATE_SUB(NOW(), INTERVAL ? SECOND)
-             ORDER BY id DESC LIMIT 1",
-            [$serverId, $rule['id'], $cooldown]
-        );
-        if ($lastAlert) return;
-    }
     
     // 跳过 server 类型的规则（如掉线检测，由其他机制处理）
     if ($metricType === 'server') return;
@@ -61,9 +48,35 @@ function checkRule($db, $server, $rule) {
         case 'neq': $triggered = $value != $threshold; break;
     }
     
-    if (!$triggered) return;
+    // 查找当前是否有活跃告警
+    $activeAlert = $db->fetch(
+        "SELECT id FROM alert_history WHERE server_id = ? AND rule_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
+        [$serverId, $rule['id']]
+    );
     
-    // 生成告警
+    if (!$triggered) {
+        // 条件恢复：如果有活跃告警，标记为已解决
+        if ($activeAlert) {
+            $db->execute(
+                "UPDATE alert_history SET status = 'resolved', resolved_at = NOW() WHERE id = ?",
+                [$activeAlert['id']]
+            );
+            echo date('[Y-m-d H:i:s]') . " RESOLVED: 服务器 [{$server['name']}] {$metricType}.{$metricField} 已恢复正常\n";
+        }
+        return;
+    }
+    
+    // 条件触发中：如果已有活跃告警，不重复发送
+    if ($activeAlert) {
+        // 更新最新指标值
+        $db->execute(
+            "UPDATE alert_history SET metric_value = ? WHERE id = ?",
+            [$value, $activeAlert['id']]
+        );
+        return;
+    }
+    
+    // 新触发：创建告警记录并发送通知
     $condSymbols = ['gt'=>'>','gte'=>'>=','lt'=>'<','lte'=>'<=','eq'=>'=','neq'=>'!='];
     $symbol = $condSymbols[$condition] ?? $condition;
     $message = sprintf(
